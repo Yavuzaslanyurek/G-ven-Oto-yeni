@@ -1,0 +1,255 @@
+﻿@model IEnumerable<GuvenOto.Models.Ilan>
+
+<div class="container mt-4">
+    @* --- HIZLI ARAMA ÇUBUĞU --- *@
+    <div class="card shadow-sm border-0 mb-4 bg-dark text-white">
+        <div class="card-body p-3">
+            <form method="get" asp-action="Index" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-light">Marka</label>
+                    <select name="MarkaId" id="brandSelect" class="form-select form-select-sm border-0">
+                        <option value="">Tüm Markalar</option>
+                        @foreach (var Marka in ViewBag.Markalar)
+                        {
+                            <option value="@Marka.Id" selected="@(ViewBag.SelectedBrand == Marka.Id)">@Marka.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-light">Model / Paket</label>
+                    <select name="AracModeliId" id="modelSelect" class="form-select form-select-sm border-0">
+                        <option value="">Tüm Modeller</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold shadow">Hızlı Ara</button>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-info btn-sm w-100 fw-bold" data-bs-toggle="modal" data-bs-target="#filterModal">
+                        <i class="bi bi-sliders"></i> Detaylı Filtre
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* --- DETAYLI FİLTRE MODAL --- *@
+    <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="get" asp-action="Index">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title text-white">Detaylı Filtreleme Seçenekleri</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body px-4">
+
+                        @* --- BÖLGELER VE İLLER (ACCORDION YAPISI) --- *@
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center border-bottom mb-2 pb-1">
+                                <label class="fw-bold text-primary">Bölgeler ve İller</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="selectAllTurkey">
+                                    <label class="form-check-label small fw-bold" for="selectAllTurkey">Tüm Türkiye'yi Seç</label>
+                                </div>
+                            </div>
+
+                            <div class="accordion accordion-flush shadow-sm border" id="regionAccordion">
+                                @foreach (var bolge in ViewBag.Bolgeler)
+                                {
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="heading_@bolge.Id">
+                                            <div class="d-flex align-items-center bg-light pe-3">
+                                                <button class="accordion-button collapsed py-2 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_@bolge.Id">
+                                                    <span class="fw-bold text-dark" style="font-size:14px;">@bolge.Name</span>
+                                                </button>
+                                                <div class="form-check mb-0">
+                                                    <input class="form-check-input region-checkbox" type="checkbox" data-region-id="@bolge.Id" id="reg_check_@bolge.Id">
+                                                    <label class="form-check-label small" for="reg_check_@bolge.Id">Tümünü Seç</label>
+                                                </div>
+                                            </div>
+                                        </h2>
+                                        <div id="collapse_@bolge.Id" class="accordion-collapse collapse" data-bs-parent="#regionAccordion">
+                                            <div class="accordion-body bg-white">
+                                                <div class="row">
+                                                    @foreach (var sehir in bolge.Sehirler)
+                                                    {
+                                                        <div class="col-md-3 col-6 mb-2">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input city-checkbox" type="checkbox" name="cityIds" value="@sehir.Id" data-parent-region="@bolge.Id" id="city_@sehir.Id">
+                                                                <label class="form-check-label small" for="city_@sehir.Id">@sehir.Name</label>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        @* --- FİYAT VE KM ARALIĞI --- *@
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="fw-bold text-primary small">Fiyat Aralığı (TL)</label>
+                                <div class="input-group input-group-sm mt-1">
+                                    <input type="number" name="minPrice" class="form-control" placeholder="En Az">
+                                    <input type="number" name="maxPrice" class="form-control" placeholder="En Çok">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold text-primary small">Kilometre Aralığı</label>
+                                <div class="input-group input-group-sm mt-1">
+                                    <input type="number" name="minKm" class="form-control" placeholder="En Az">
+                                    <input type="number" name="maxKm" class="form-control" placeholder="En Çok">
+                                </div>
+                            </div>
+                        </div>
+
+                        @* --- DİNAMİK ARAÇ ÖZELLİKLERİ --- *@
+                        <div class="row border-top pt-3">
+                            <label class="fw-bold mb-2 text-primary">Araç Özellikleri</label>
+                            @foreach (var ozellik in ViewBag.Ozellikler)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <label class="small fw-bold">@ozellik.Name</label>
+                                    @if (ozellik.Name.Contains("Güç") || ozellik.Name.Contains("Hacim"))
+                                    {
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" name="minFeatures[@ozellik.Id]" class="form-control" placeholder="Min">
+                                            <input type="number" name="maxFeatures[@ozellik.Id]" class="form-control" placeholder="Max">
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <input type="text" name="selectedFeatures[@ozellik.Id]" class="form-control form-control-sm" placeholder="@ozellik.Name girin...">
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                        <button type="submit" class="btn btn-primary px-4">Sonuçları Gör</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @* --- İLAN TABLOSU --- *@
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                <thead class="table-light border-bottom">
+                    <tr class="text-secondary">
+                        <th style="width: 110px;"></th>
+                        <th>Model</th>
+                        <th>İlan Başlığı</th>
+                        <th class="text-center">Yıl</th>
+                        <th class="text-center">KM</th>
+                        <th class="text-center">Fiyat</th>
+                        <th class="text-center">İlan Tarihi</th>
+                        <th class="text-center">İl / İlçe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="p-2">
+                                <a asp-action="Details" asp-route-id="@item.Id">
+                                    <img src="@(item.MainImageUrl ?? "/images/no-image.png")"
+                                         class="rounded border shadow-sm"
+                                         style="width: 100px; height: 75px; object-fit: cover;">
+                                </a>
+                            </td>
+                            <td class="fw-bold" style="width: 150px;">
+                                @item.AracModeli?.Marka?.Name <br />
+                                <span class="text-muted fw-normal" style="font-size: 11px;">@item.AracModeli?.Name</span>
+                            </td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@item.Id"
+                                   class="text-decoration-none fw-semibold d-block mb-1"
+                                   style="color: #003399; font-size: 14px;">
+                                    @item.Title
+                                </a>
+                                <div class="d-flex gap-2 text-muted" style="font-size: 11px;">
+                                    <span><i class="bi bi-star"></i> Favoriye Ekle</span>
+                                    <span><i class="bi bi-arrow-left-right"></i> Karşılaştır</span>
+                                </div>
+                            </td>
+                            <td class="text-center">@item.Year</td>
+                            <td class="text-center">@item.Kilometer.ToString("N0")</td>
+                            <td class="text-center fw-bold text-danger" style="font-size: 15px; width: 120px;">
+                                @item.Price.ToString("N0") TL
+                            </td>
+                            <td class="text-center text-muted">
+                                @item.CreatedDate.ToString("dd MMM yyyy")
+                            </td>
+                            <td class="text-center">
+                                @item.Sehir?.Name <br />
+                                <small class="text-muted">@item.Ilce?.Name</small>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Marka-Model İlişkisi
+            $("#brandSelect").change(function () {
+                loadModels($(this).val(), null);
+            });
+
+            if ($("#brandSelect").val()) {
+                loadModels($("#brandSelect").val(), '@ViewBag.SelectedModel');
+            }
+
+            function loadModels(MarkaId, selectedId) {
+                if (!MarkaId) {
+                    $("#modelSelect").empty().append('<option value="">Tüm Modeller</option>');
+                    return;
+                }
+                $.getJSON('/Ilan/GetModels', { MarkaId: MarkaId }, function (data) {
+                    var $s = $("#modelSelect").empty().append('<option value="">Tüm Modeller</option>');
+                    $.each(data, function (i, m) {
+                        $s.append(`<option value="${m.id}" ${selectedId == m.id ? 'selected' : ''}>${m.name}</option>`);
+                    });
+                });
+            }
+
+            // --- SEÇİM MANTIĞI (JS) ---
+
+            // 1. Bölge Checkbox'ı seçilince altındaki tüm illeri seç/kaldır
+            $(".region-checkbox").change(function() {
+                var regionId = $(this).data("region-id");
+                var isChecked = $(this).prop("checked");
+                $(`.city-checkbox[data-parent-region='${regionId}']`).prop("checked", isChecked);
+            });
+
+            // 2. Tüm Türkiye'yi Seç (Switch)
+            $("#selectAllTurkey").change(function() {
+                var isChecked = $(this).prop("checked");
+                $(".city-checkbox, .region-checkbox").prop("checked", isChecked);
+            });
+
+            // 3. Eğer bir ilin seçimi el ile kaldırılırsa, "Tümünü Seç" ve "Tüm Türkiye" işaretini kaldır
+            $(".city-checkbox").change(function() {
+                var regionId = $(this).data("parent-region");
+                if (!$(this).prop("checked")) {
+                    $(`.region-checkbox[data-region-id='${regionId}']`).prop("checked", false);
+                    $("#selectAllTurkey").prop("checked", false);
+                }
+            });
+        });
+    </script>
+}
+
+

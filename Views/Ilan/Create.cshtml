@@ -1,0 +1,335 @@
+﻿@model GuvenOto.Models.Ilan
+
+<div class="container mt-4 mb-5">
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
+        <div class="card shadow border-0">
+            <div class="card-header bg-dark text-white text-center py-3">
+                <h4 class="mb-0">🚗 YENİ İLAN OLUŞTUR</h4>
+            </div>
+
+            <div class="card-body bg-light p-4">
+                <div class="row">
+                    <div class="col-md-7 border-end">
+                        <h5 class="text-primary border-bottom pb-2 mb-3">1. Araç Seçimi & Başlık</h5>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="fw-bold small">Marka</label>
+                                <select id="brandSelect" class="form-select border-primary shadow-sm" required>
+                                    <option value="">Seçiniz...</option>
+                                    @foreach (var b in ViewBag.Markalar)
+                                    {
+                                        <option value="@b.Id">@b.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label class="fw-bold small">Model / Seri / Paket</label>
+                                <select id="finalModelSelect" name="AracModeliId" class="form-select border-primary shadow-sm" required>
+                                    <option value="">Önce marka seçmelisiniz...</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="Plate" class="form-label fw-bold small">Araç Plakası</label>
+                                <input asp-for="Plate" class="form-control text-uppercase shadow-sm" placeholder="Örn: 34ABC123" required />
+                                <span asp-validation-for="Plate" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-7 mb-3">
+                                <label class="fw-bold small">İlan Başlığı</label>
+                                <input asp-for="Title" class="form-control shadow-sm" placeholder="Örn: Hatasız Bakımlı Araç" required />
+                            </div>
+
+                            <div class="col-md-5 mb-3">
+                                <label class="fw-bold small">Fiyat (TL)</label>
+                                <div class="input-group">
+                                    <input asp-for="Price" id="priceInput" class="form-control text-danger fw-bold shadow-sm" type="number" required />
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="suggestPrice()">
+                                        💡 Öneri Al
+                                    </button>
+                                </div>
+                                <div id="suggestionResult" class="mt-1" style="display:none;">
+                                    <span class="badge bg-success" id="suggestionText"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5 class="text-primary border-bottom pb-2 mt-4 mb-3">2. Araç Konumu</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="fw-bold small mb-1">Şehir</label>
+                                <select id="citySelect" name="CityId" class="form-select shadow-sm border-primary" required onchange="loadDistricts(this.value)">
+                                    <option value="">İl Seçiniz...</option>
+                                    @foreach (var Sehir in ViewBag.Sehirler)
+                                    {
+                                        <option value="@Sehir.Id">@Sehir.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold small mb-1">İlçe</label>
+                                <select id="districtSelect" name="DistrictId" class="form-select shadow-sm border-primary" required>
+                                    <option value="">Önce il seçiniz...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <h5 class="text-primary border-bottom pb-2 mt-4 mb-3">3. Teknik Bilgiler & Özellikler</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="fw-bold small mb-1">Model Yılı</label>
+                                <input type="number" name="Year" id="yearInput" class="form-control shadow-sm" placeholder="Örn: 2020" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold small mb-1">Kilometre</label>
+                                <input type="number" name="Kilometer" id="kmInput" class="form-control shadow-sm" placeholder="Örn: 55000" required />
+                            </div>
+
+                            @foreach (var Ozellik in (IEnumerable<GuvenOto.Models.Ozellik>)ViewBag.Ozellikler)
+                            {
+                                <div class="col-md-6">
+                                    <label class="fw-bold small mb-1">@Ozellik.Name @(!string.IsNullOrEmpty(Ozellik.FormatType) ? $"({Ozellik.FormatType})" : "")</label>
+                                    @switch (Ozellik.InputType)
+                                    {
+                                        case GuvenOto.Models.FeatureType.Checkbox:
+                                            <div class="form-check form-switch border rounded p-2 bg-white shadow-sm">
+                                                <input class="form-check-input ms-0 me-2" type="checkbox" name="selectedFeatures" value="@Ozellik.Id" id="f-@Ozellik.Id">
+                                                <label class="form-check-label small" for="f-@Ozellik.Id">Mevcut</label>
+                                            </div>
+                                            break;
+                                        case GuvenOto.Models.FeatureType.Dropdown:
+                                            <select name="FeatureValues[@Ozellik.Id]" class="form-select shadow-sm">
+                                                <option value="">Seçiniz...</option>
+                                                @if (!string.IsNullOrEmpty(Ozellik.Options))
+                                                {
+                                                    @foreach (var opt in Ozellik.Options.Split(','))
+                                                    {
+                                                        <option value="@opt.Trim()">@opt.Trim()</option>
+                                                    }
+                                                }
+                                            </select>
+                                            break;
+                                        default:
+                                            <input type="text" name="FeatureValues[@Ozellik.Id]" class="form-control shadow-sm" placeholder="..." />
+                                            break;
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-md-5 px-4 text-center">
+                        <h5 class="text-danger border-bottom pb-2 mb-3">4. Ekspertiz Raporu</h5>
+
+                        @* ŞABLONUN (DİYAGRAMIN) GÖRÜNMESİNİ SAĞLAYAN KRİTİK ALAN *@
+                        <div class="araba-diagram-container border shadow-sm mb-4 bg-white p-3">
+                            <div class="araba-body-layout">
+                                <div class="araba-row"><div class="araba-part front-bumper" data-part="FrontBumperStatus">ÖN TAMPON</div></div>
+                                <div class="araba-row"><div class="araba-part hood" data-part="HoodStatus">KAPUT</div></div>
+                                <div class="araba-main-section">
+                                    <div class="side-column">
+                                        <div class="araba-part side-fender" data-part="FrontLeftFender">SOL ÖN Ç.</div>
+                                        <div class="araba-part door" data-part="FrontLeftDoor">SOL ÖN K.</div>
+                                        <div class="araba-part door" data-part="RearLeftDoor">SOL ARKA K.</div>
+                                        <div class="araba-part side-fender" data-part="RearLeftFender">SOL ARKA Ç.</div>
+                                    </div>
+                                    <div class="center-column">
+                                        <div class="araba-part roof-part" data-part="RoofStatus">TAVAN</div>
+                                    </div>
+                                    <div class="side-column">
+                                        <div class="araba-part side-fender" data-part="FrontRightFender">SAĞ ÖN Ç.</div>
+                                        <div class="araba-part door" data-part="FrontRightDoor">SAĞ ÖN K.</div>
+                                        <div class="araba-part door" data-part="RearRightDoor">SAĞ ARKA K.</div>
+                                        <div class="araba-part side-fender" data-part="RearRightFender">SAĞ ARKA Ç.</div>
+                                    </div>
+                                </div>
+                                <div class="araba-row"><div class="araba-part trunk" data-part="TrunkStatus">BAGAJ</div></div>
+                                <div class="araba-row"><div class="araba-part rear-bumper" data-part="RearBumperStatus">ARKA TAMPON</div></div>
+                            </div>
+                        </div>
+
+                        <div id="expertInputs">
+                            @foreach (var p in new[] { "HoodStatus", "RoofStatus", "TrunkStatus", "FrontBumperStatus", "RearBumperStatus", "FrontLeftFender", "FrontLeftDoor", "RearLeftDoor", "RearLeftFender", "FrontRightFender", "FrontRightDoor", "RearRightDoor", "RearRightFender" })
+                            {
+                                <input type="hidden" name="@p" id="in-@p" value="0" />
+                            }
+                        </div>
+
+                        <h5 class="text-success border-bottom pb-2 mt-4 mb-3 text-start">5. Dosyalar</h5>
+                        <div class="mb-3 text-start">
+                            <label class="fw-bold small">Kapak Fotoğrafı</label>
+                            <input type="file" name="mainImage" class="form-control" accept="image/*" required />
+                        </div>
+                        <div class="mb-3 text-start">
+                            <label class="fw-bold small">Ekspertiz PDF</label>
+                            <input type="file" name="pdfFile" class="form-control" accept=".pdf" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-5">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 shadow-lg fw-bold">🚀 İLANI YAYINLA</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // Ekspertiz Tıklama Mantığı
+        document.querySelectorAll('.araba-part').forEach(part => {
+            part.addEventListener('click', function() {
+                let partName = this.getAttribute('data-part');
+                let input = document.getElementById('in-' + partName);
+                let next = (parseInt(input.value) + 1) % 4;
+                input.value = next;
+
+                // Mevcut status sınıflarını temizle ve yenisini ekle
+                this.classList.remove('status-0', 'status-1', 'status-2', 'status-3');
+                this.classList.add('status-' + next);
+            });
+        });
+
+        // Marka - Model Ajax
+        document.getElementById('brandSelect').addEventListener('change', function() {
+            let MarkaId = this.value;
+            let s = document.getElementById('finalModelSelect');
+            if(!MarkaId) { s.innerHTML = '<option value="">Seçiniz...</option>'; return; }
+
+            fetch('/Ilan/GetModels?MarkaId=' + MarkaId)
+                .then(res => res.json())
+                .then(data => {
+                    s.innerHTML = '<option value="">Seçiniz...</option>';
+                    data.forEach(item => {
+                        s.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+                    });
+                });
+        });
+
+        // Şehir - İlçe Ajax
+        function loadDistricts(cityId) {
+            let districtSelect = document.getElementById('districtSelect');
+            if (!cityId) {
+                districtSelect.innerHTML = '<option value="">Önce il seçiniz...</option>';
+                return;
+            }
+            fetch('/Ilan/GetIlceler?cityId=' + cityId)
+                .then(res => res.json())
+                .then(data => {
+                    districtSelect.innerHTML = '<option value="">İlçe Seçiniz...</option>';
+                    data.forEach(item => {
+                        districtSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+                    });
+                });
+        }
+
+        // Fiyat Önerisi
+        function suggestPrice() {
+            let mId = document.getElementById('finalModelSelect').value;
+            let year = document.getElementById('yearInput').value;
+            let km = document.getElementById('kmInput').value;
+            if (!mId || !year || !km) { alert("Lütfen Model, Yıl ve KM giriniz."); return; }
+
+            fetch(`/Ilan/GetPriceSuggestion?modelId=${mId}&year=${year}&km=${km}`)
+                .then(res => res.json())
+                .then(data => {
+                    let resDiv = document.getElementById('suggestionResult');
+                    let resText = document.getElementById('suggestionText');
+                    resText.innerText = data.price > 0 ? "Önerilen: " + data.price.toLocaleString() + " TL" : "Veri yetersiz.";
+                    resDiv.style.display = "block";
+                });
+        }
+    </script>
+
+    <style>
+        /* ARABA ŞABLON TASARIMI */
+        .araba-body-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .araba-main-section {
+            display: flex;
+            gap: 5px;
+        }
+
+        .side-column {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .araba-part {
+            background: #eee;
+            border: 1px solid #ccc;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: 0.2s;
+            color: #555;
+        }
+
+        .hood {
+            width: 120px;
+            height: 70px;
+            border-radius: 30% 30% 5% 5%;
+        }
+
+        .roof-part {
+            width: 120px;
+            height: 180px;
+            border-radius: 15px;
+        }
+
+        .trunk {
+            width: 120px;
+            height: 50px;
+            border-radius: 5% 5% 30% 30%;
+        }
+
+        .front-bumper, .rear-bumper {
+            width: 100px;
+            height: 25px;
+            border-radius: 10px;
+        }
+
+        .side-fender {
+            width: 70px;
+            height: 50px;
+            border-radius: 10px;
+        }
+
+        .door {
+            width: 70px;
+            height: 75px;
+        }
+
+        /* Durum Renkleri */
+        .status-1 {
+            background: #ffc107 !important;
+            color: black;
+        }
+        /* Boyalı */
+        .status-2 {
+            background: #0d6efd !important;
+            color: white;
+        }
+        /* Değişmiş */
+        .status-3 {
+            background: #dc3545 !important;
+            color: white;
+        }
+        /* Hasarlı */
+
+        .araba-part:hover {
+            opacity: 0.8;
+            transform: scale(1.02);
+        }
+    </style>
+}

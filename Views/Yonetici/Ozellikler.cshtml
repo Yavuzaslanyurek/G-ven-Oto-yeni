@@ -1,0 +1,132 @@
+﻿@model IEnumerable<GuvenOto.Models.Ozellik>
+
+<div class="container mt-4">
+    <h2 class="text-primary"><i class="bi bi-gear-fill"></i> Özellik Yönetimi</h2>
+    <p class="text-muted">Giriş tiplerine ve kısıtlamalara göre "İlan Ver" sayfasındaki kutucuklar otomatik şekillenir.</p>
+    <hr />
+
+    <div class="card shadow-sm mb-5">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Yeni Özellik Tanımla</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="AddFeature" method="post" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Özellik Adı</label>
+                    <input name="Name" class="form-control" placeholder="Örn: ABS, KM, Vites" required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Kategori</label>
+                    <select name="Category" class="form-select" asp-items="Html.GetEnumSelectList<GuvenOto.Models.FeatureCategory>()" required>
+                        <option value="">Kategori Seçin...</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Giriş Tipi</label>
+                    <select name="InputType" id="inputTypeSelect" class="form-select" asp-items="Html.GetEnumSelectList<GuvenOto.Models.FeatureType>()" required>
+                        <option value="">Giriş Tipi Seçin...</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-plus-circle"></i> Sisteme Ekle
+                    </button>
+                </div>
+
+                <div id="dropdownOptionsArea" class="col-md-6 mt-3" style="display:none;">
+                    <label class="form-label fw-bold text-primary">Seçenekler (Aralarına virgül koyun)</label>
+                    <input name="Options" class="form-control" placeholder="Örn: Manuel, Otomatik, Yarı Otomatik" />
+                </div>
+
+                <div id="numberConfigArea" class="col-md-6 mt-3" style="display:none;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-danger">Max Basamak</label>
+                            <input name="MaxLength" type="number" class="form-control" placeholder="Örn: 7">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-danger">Format</label>
+                            <select name="FormatType" class="form-select">
+                                <option value="">Standart</option>
+                                <option value="Numeric">Binlik Ayırıcılı (1.250.000)</option>
+                                <option value="Year">Yıl Formatı (2026)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        @foreach (var grup in Model.GroupBy(x => x.Category))
+        {
+            <div class="col-md-6 mb-4">
+                <div class="card border-info h-100 shadow-sm">
+                    <div class="card-header bg-info text-dark fw-bold">
+                        <i class="bi bi-list-check"></i> @grup.Key.ToString()
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        @foreach (var Ozellik in grup)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                <div>
+                                    <span class="fw-bold fs-5">@Ozellik.Name</span>
+                                    <br />
+                                    <small class="badge bg-light text-muted border me-1">
+                                        @switch (Ozellik.InputType)
+                                        {
+                                            case GuvenOto.Models.FeatureType.Checkbox:
+                                                <i class="bi bi-check2-square text-success"></i> <span>Tik Kutusu</span>
+                                                break;
+                                            case GuvenOto.Models.FeatureType.Text:
+                                                <i class="bi bi-chat-left-text text-primary"></i> <span>Metin</span>
+                                                break;
+                                            case GuvenOto.Models.FeatureType.Number:
+                                                <i class="bi bi-hash text-danger"></i> <span>Sayı (@(Ozellik.MaxLength ?? 0) hane)</span>
+                                                break;
+                                            case GuvenOto.Models.FeatureType.Dropdown:
+                                                <i class="bi bi-caret-down-square text-warning"></i> <span>Seçim Listesi</span>
+                                                break;
+                                        }
+                                    </small>
+                                    @if (!string.IsNullOrEmpty(Ozellik.Options))
+                                    {
+                                        <small class="text-primary d-block mt-1" style="font-size: 0.8rem;">
+                                            <strong>Seçenekler:</strong> @Ozellik.Options
+                                        </small>
+                                    }
+                                </div>
+                                <form asp-action="DeleteFeature" method="post" onsubmit="return confirm('Bu özelliği silmek istediğinize emin misiniz?')">
+                                    <input type="hidden" name="id" value="@Ozellik.Id" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm border-0">
+                                        <i class="bi bi-trash fs-5"></i>
+                                    </button>
+                                </form>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Giriş tipi değiştikçe alt kutucukları aç/kapat
+        document.getElementById('inputTypeSelect').addEventListener('change', function () {
+            var val = this.value; // Dropdown listesindeki value değeri
+            
+            // Enum değerlerine göre kontrol (FeatureType enum sıranıza göre: Dropdown=4, Number=3)
+            var dropdownArea = document.getElementById('dropdownOptionsArea');
+            var numberArea = document.getElementById('numberConfigArea');
+
+            // Dropdown seçildiyse (Value genelde 4'tür)
+            dropdownArea.style.display = (val == "4") ? "block" : "none";
+
+            // Sayı seçildiyse (Value genelde 3'tür)
+            numberArea.style.display = (val == "3") ? "block" : "none";
+        });
+    </script>
+}

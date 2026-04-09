@@ -1,0 +1,28 @@
+﻿<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card shadow border-0 rounded-3">
+                <div class="card-header bg-dark text-white text-center py-3">
+                    <h5 class="mb-0">Güven Oto Giriş Paneli</h5>
+                </div>
+                <div class="card-body p-4">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger">@ViewBag.Error</div>
+                    }
+                    <form method="post">
+                        <div class="mb-3">
+                            <label class="form-label">E-Posta</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Şifre</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2">Giriş Yap</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

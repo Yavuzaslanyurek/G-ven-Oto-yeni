@@ -1,0 +1,159 @@
+﻿@model IEnumerable<GuvenOto.Models.Marka>
+
+<div class="container mt-4">
+    <h2 class="text-primary"><i class="bi bi-gear-wide-connected"></i> Katalog Yönetimi</h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-5">
+
+            <div class="card shadow-sm mb-4 border-success">
+                <div class="card-header bg-success text-white fw-bold small">1. ADIM: MARKA EKLE</div>
+                <div class="card-body">
+                    <form asp-action="AddBrand" method="post" class="d-flex gap-2">
+                        <input name="Name" class="form-control" placeholder="Örn: Ford" required />
+                        <button type="submit" class="btn btn-success">Marka Ekle</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4 border-primary">
+                <div class="card-header bg-primary text-white fw-bold small">2. ADIM: ANA MODEL EKLE</div>
+                <div class="card-body">
+                    <form asp-action="AddModel" method="post">
+                        <select name="MarkaId" class="form-select mb-2" required>
+                            <option value="">Marka Seçin...</option>
+                            @foreach (var b in Model)
+                            {
+                                <option value="@b.Id">@b.Name</option>
+                            }
+                        </select>
+                        <div class="d-flex gap-2">
+                            <input name="Name" class="form-control" placeholder="Örn: Focus" required />
+                            <input type="hidden" name="ParentModelId" value="0" />
+                            <button type="submit" class="btn btn-primary">Kaydet</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-info">
+                <div class="card-header bg-info text-white fw-bold small">3. ADIM: SERİ VEYA PAKET EKLE</div>
+                <div class="card-body">
+                    <form asp-action="AddModel" method="post">
+                        <div class="mb-2">
+                            <label class="small fw-bold">1. Markayı Seç</label>
+                            <select id="brandSelectForSub" name="MarkaId" class="form-select" required>
+                                <option value="">Marka Seçin...</option>
+                                @foreach (var b in Model)
+                                {
+                                    <option value="@b.Id">@b.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="small fw-bold">2. Üst Seçeneği Seç (Model veya Seri)</label>
+                            <select name="ParentModelId" id="parentModelSelect" class="form-select" required>
+                                <option value="0">Önce Marka Seçin...</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="small fw-bold">3. Yeni İsim (Seri/Paket)</label>
+                            <div class="d-flex gap-2">
+                                <input name="Name" class="form-control" placeholder="Örn: 1.6 TDCi veya Style" required />
+                                <button type="submit" class="btn btn-info text-white">Ekle</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white fw-bold small text-center text-uppercase">Araç Katalog Ağacı</div>
+                <div class="card-body p-0">
+                    <div class="accordion accordion-flush" id="brandAccordion">
+                        @foreach (var Marka in Model)
+                        {
+                            <div class="accordion-item">
+                                <h2 class="accordion-header d-flex align-items-center">
+                                    <button class="accordion-button collapsed flex-grow-1 font-weight-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@Marka.Id">
+                                        @Marka.Name
+                                    </button>
+                                    <form asp-action="DeleteBrand" method="post" class="pe-3">
+                                        <input type="hidden" name="id" value="@Marka.Id" />
+                                        <button type="submit" class="btn btn-sm text-danger border-0"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </h2>
+                                <div id="collapse-@Marka.Id" class="accordion-collapse collapse" data-bs-parent="#brandAccordion">
+                                    <div class="accordion-body bg-light">
+                                        @foreach (var m in Marka.Models.Where(x => x.ParentModelId == null))
+                                        {
+                                            <div class="d-flex justify-content-between align-items-center fw-bold text-primary border-bottom py-1 mt-2">
+                                                <span>● @m.Name</span>
+                                                <form asp-action="DeleteModel" method="post"><input type="hidden" name="id" value="@m.Id" /><button type="submit" class="btn btn-sm text-danger p-0 px-1"><i class="bi bi-x-circle"></i></button></form>
+                                            </div>
+                                            @foreach (var sub in Marka.Models.Where(x => x.ParentModelId == m.Id))
+                                            {
+                                                <div class="d-flex justify-content-between align-items-center ms-3 text-secondary py-1 border-bottom border-white">
+                                                    <span>└ @sub.Name (Seri)</span>
+                                                    <form asp-action="DeleteModel" method="post"><input type="hidden" name="id" value="@sub.Id" /><button type="submit" class="btn btn-sm text-danger p-0 px-1">-</button></form>
+                                                </div>
+                                                @foreach (var sub2 in Marka.Models.Where(x => x.ParentModelId == sub.Id))
+                                                {
+                                                    <div class="d-flex justify-content-between align-items-center ms-5 text-muted small py-1">
+                                                        <span>└ @sub2.Name (Paket)</span>
+                                                        <form asp-action="DeleteModel" method="post"><input type="hidden" name="id" value="@sub2.Id" /><button type="submit" class="btn btn-sm text-danger p-0 px-1"><i class="bi bi-trash3"></i></button></form>
+                                                    </div>
+                                                }
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('brandSelectForSub').addEventListener('change', function () {
+            const MarkaId = this.value;
+            const parentSelect = document.getElementById('parentModelSelect');
+            parentSelect.innerHTML = '<option value="0">Yükleniyor...</option>';
+
+            if (MarkaId) {
+                fetch('/Admin/GetModelsByBrand/' + MarkaId)
+                    .then(res => res.json())
+                    .then(data => {
+                        parentSelect.innerHTML = '<option value="0">Seçiniz...</option>';
+
+                        // Önce ANA MODELLERİ (Focus vb.) filtrele
+                        const models = data.filter(x => x.parentId == null);
+                        models.forEach(m => {
+                            parentSelect.innerHTML += `<option value="${m.id}" style="font-weight:bold; color:blue;">-- ${m.name} (MODEL) --</option>`;
+
+                            // Sonra bu modele bağlı SERİLERİ (1.6 TDCi vb.) filtrele
+                            const series = data.filter(x => x.parentId == m.id);
+                            series.forEach(s => {
+                                parentSelect.innerHTML += `<option value="${s.id}">&nbsp;&nbsp;&nbsp;└ ${s.name} (SERİ)</option>`;
+
+                                // Varsa SERİ altına bağlanmış PAKETLERİ filtrele
+                                const pkgs = data.filter(x => x.parentId == s.id);
+                                pkgs.forEach(p => {
+                                    parentSelect.innerHTML += `<option value="${p.id}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ ${p.name} (PAKET)</option>`;
+                                });
+                            });
+                        });
+                    });
+            }
+        });
+    </script>
+}

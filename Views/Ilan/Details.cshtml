@@ -1,0 +1,305 @@
+﻿@model GuvenOto.Models.Ilan
+
+<div class="container mt-4 mb-5">
+    @* --- Üst Başlık ve Fiyat --- *@
+    <div class="row mb-3 align-items-end border-bottom pb-3">
+        <div class="col-md-9">
+            <h1 class="fw-bold text-dark mb-1" style="letter-spacing: -1px; font-size: 2.2rem;">
+                @(Model.Title ?? "İlan Detayı")
+            </h1>
+            <small class="text-muted">İlan No: #@Model.Id | Görüntülenme: @(new Random().Next(150, 600))</small>
+        </div>
+        <div class="col-md-3 text-md-end">
+            <h2 class="text-danger fw-bold mb-0" style="font-size: 2.2rem;">
+                @Model.Price.ToString("N0") TL
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            @* --- Araç Görseli --- *@
+            <div class="card shadow-sm border-0 mb-3 text-center bg-light">
+                <img src="@(Model.MainImageUrl ?? "/images/no-image.png")"
+                     class="img-fluid rounded shadow-sm"
+                     style="max-height: 500px; width: auto; object-fit: contain;">
+            </div>
+
+            @* --- Marka Model Künyesi --- *@
+            <div class="alert alert-light border shadow-sm py-3 mb-4">
+                <div class="d-flex align-items-center flex-wrap gap-2 text-dark fw-bold" style="font-size: 1.25rem;">
+                    <span class="text-primary">@Model.AracModeli?.Marka?.Name</span>
+                    <span class="text-muted mx-1">/</span>
+                    <span>@Model.AracModeli?.Name</span>
+                    <span class="text-muted mx-1">/</span>
+                    <span class="text-secondary">@Model.Year Modeli</span>
+                </div>
+            </div>
+
+            @* --- Sorgulama Servisleri (Butonlar) --- *@
+            <div class="card shadow-sm border-0 mb-4 bg-dark text-white">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-shield-check text-success"></i> GüvenOto Ücretsiz Sorgulama Servisleri</h5>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <button type="button" onclick="checkDamage('@Model.Plate')" class="btn btn-danger w-100 py-2 fw-bold shadow-sm">
+                                <i class="bi bi-exclamation-octagon"></i> Hasar Sorgula
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" onclick="checkKilometer('@Model.Plate')" class="btn btn-warning w-100 py-2 fw-bold shadow-sm">
+                                <i class="bi bi-speedometer2"></i> KM Sorgula
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" onclick="checkRegistry('@Model.Plate')" class="btn btn-info text-white w-100 py-2 fw-bold shadow-sm">
+                                <i class="bi bi-file-earmark-text"></i> Araç Bilgisi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* --- Teknik Detaylar --- *@
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold border-bottom-0 pt-4 px-4">
+                    <h4 class="mb-0">Genel Özellikler</h4>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-2 d-flex justify-content-between border-bottom pb-2">
+                            <span class="text-muted">Kilometre:</span>
+                            <span class="fw-bold text-dark">@Model.Kilometer.ToString("N0") KM</span>
+                        </div>
+                        <div class="col-md-6 mb-2 d-flex justify-content-between border-bottom pb-2">
+                            <span class="text-muted">Şehir / İlçe:</span>
+                            <span class="fw-bold text-dark">@Model.Sehir?.Name / @Model.Ilce?.Name</span>
+                        </div>
+                        <div class="col-md-6 mb-2 d-flex justify-content-between border-bottom pb-2">
+                            <span class="text-muted">Plaka:</span>
+                            <span class="fw-bold text-dark text-uppercase">@Model.Plate</span>
+                        </div>
+                        <div class="col-md-6 mb-2 d-flex justify-content-between border-bottom pb-2">
+                            <span class="text-muted">İlan Tarihi:</span>
+                            <span class="fw-bold text-dark">@Model.CreatedDate.ToString("dd.MM.yyyy")</span>
+                        </div>
+
+                        @if (Model.IlanOzellikDegeri != null)
+                        {
+                            @foreach (var val in Model.IlanOzellikDegeri)
+                            {
+                                <div class="col-md-6 mb-2 d-flex justify-content-between border-bottom pb-2">
+                                    <span class="text-muted">@val.Ozellik?.Name:</span>
+                                    <span class="fw-bold text-dark">@val.Value</span>
+                                </div>
+                            }
+                        }
+                    </div>
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="fw-bold">Açıklama:</h6>
+                        <p class="text-dark mb-0">@Model.Description</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* --- Sağ Taraf: Ekspertiz Şeması --- *@
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
+                <div class="card-header bg-dark text-white fw-bold text-center py-3">Ekspertiz Durumu</div>
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-center gap-2 mb-4 small">
+                        <span><i class="p-1 status-1 rounded me-1" style="width:12px; height:12px; display:inline-block;"></i>Orj</span>
+                        <span><i class="p-1 status-2 rounded me-1" style="width:12px; height:12px; display:inline-block;"></i>Lok</span>
+                        <span><i class="p-1 status-3 rounded me-1" style="width:12px; height:12px; display:inline-block;"></i>Boy</span>
+                        <span><i class="p-1 status-4 rounded me-1" style="width:12px; height:12px; display:inline-block;"></i>Değ</span>
+                    </div>
+
+                    <div class="araba-diagram-static">
+                        <div class="araba-body-layout">
+                            <div class="araba-row"><div class="araba-part front-bumper status-@Model.FrontBumperStatus">ÖN TAMPON</div></div>
+                            <div class="araba-row"><div class="araba-part hood status-@Model.HoodStatus">KAPUT</div></div>
+                            <div class="araba-main-section">
+                                <div class="side-column">
+                                    <div class="araba-part side-fender status-@Model.FrontLeftFender">SOL ÖN Ç.</div>
+                                    <div class="araba-part door status-@Model.FrontLeftDoor">SOL ÖN K.</div>
+                                    <div class="araba-part door status-@Model.RearLeftDoor">SOL ARKA K.</div>
+                                    <div class="araba-part side-fender status-@Model.RearLeftFender">SOL ARKA Ç.</div>
+                                </div>
+                                <div class="center-column"><div class="araba-part roof-part status-@Model.RoofStatus">TAVAN</div></div>
+                                <div class="side-column">
+                                    <div class="araba-part side-fender status-@Model.FrontRightFender">SAĞ ÖN Ç.</div>
+                                    <div class="araba-part door status-@Model.FrontRightDoor">SAĞ ÖN K.</div>
+                                    <div class="araba-part door status-@Model.RearRightDoor">SAĞ ARKA K.</div>
+                                    <div class="araba-part side-fender status-@Model.RearRightFender">SAĞ ARKA Ç.</div>
+                                </div>
+                            </div>
+                            <div class="araba-row"><div class="araba-part trunk status-@Model.TrunkStatus">BAGAJ</div></div>
+                            <div class="araba-row"><div class="araba-part rear-bumper status-@Model.RearBumperStatus">ARKA TAMPON</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* --- Sorgu Sonucu İçin Modal Yapısı --- *@
+<div class="modal fade" id="sorguModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold" id="modalTitle">Sorgu Sonucu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                @* JavaScript içeriği buraya basacak *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .araba-body-layout {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .araba-main-section {
+        display: flex;
+        gap: 5px;
+    }
+
+    .side-column {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .araba-part {
+        background: #eee;
+        border: 1px solid #ccc;
+        font-size: 8px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .hood {
+        width: 100px;
+        height: 60px;
+        border-radius: 30% 30% 5% 5%;
+    }
+
+    .roof-part {
+        width: 90px;
+        height: 160px;
+        border-radius: 15px;
+    }
+
+    .trunk {
+        width: 100px;
+        height: 40px;
+        border-radius: 5% 5% 30% 30%;
+    }
+
+    .front-bumper, .rear-bumper {
+        width: 80px;
+        height: 20px;
+        border-radius: 10px;
+    }
+
+    .side-fender {
+        width: 55px;
+        height: 45px;
+        border-radius: 10px;
+    }
+
+    .door {
+        width: 55px;
+        height: 65px;
+    }
+
+    .status-0 {
+        background: #e9ecef !important;
+        color: #6c757d;
+    }
+
+    .status-1 {
+        background: #6c757d !important;
+        color: #fff;
+    }
+
+    .status-2 {
+        background: #ffc107 !important;
+        color: #000;
+    }
+
+    .status-3 {
+        background: #0d6efd !important;
+        color: #fff;
+    }
+
+    .status-4 {
+        background: #dc3545 !important;
+        color: #fff;
+    }
+</style>
+
+<script>
+    function showModal(title, body) {
+        var modalTitle = document.getElementById('modalTitle');
+        var modalBody = document.getElementById('modalBody');
+
+        if(modalTitle && modalBody) {
+            modalTitle.innerText = title;
+            modalBody.innerHTML = body;
+            var myModal = new bootstrap.Modal(document.getElementById('sorguModal'));
+            myModal.show();
+        }
+    }
+
+    function checkDamage(plate) {
+        showModal("Hasar Sorgu Sonucu",
+            `<div class="p-4 text-center">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 3.5rem;"></i>
+                <h5 class="mt-3 fw-bold">${plate}</h5>
+                <p class="text-muted">Bu plakalı aracın sistemimizde ağır hasar kaydı bulunmamaktadır.</p>
+                <hr>
+                <small class="text-secondary">Sorgulama Tarihi: ${new Date().toLocaleDateString('tr-TR')}</small>
+            </div>`);
+    }
+
+    function checkKilometer(plate) {
+        showModal("KM Bilgisi (TÜVTÜRK)",
+            `<div class="p-3">
+                <div class="alert alert-info">Plaka: <strong>${plate}</strong></div>
+                <table class="table table-striped border">
+                    <thead class="table-dark">
+                        <tr><th>Muayene</th><th>Kilometre</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>GÜNCEL</td><td>@Model.Kilometer.ToString("N0") KM</td></tr>
+                        <tr><td>ÖNCEKİ</td><td>@((Model.Kilometer - 18450).ToString("N0")) KM</td></tr>
+                    </tbody>
+                </table>
+            </div>`);
+    }
+
+    function checkRegistry(plate) {
+        showModal("Araç Kayıt Bilgisi",
+            `<div class="p-3 text-start">
+                <p><strong>Plaka:</strong> ${plate}</p>
+                <p><strong>Marka/Model:</strong> @Model.AracModeli?.Marka?.Name @Model.AracModeli?.Name</p>
+                <p><strong>Model Yılı:</strong> @Model.Year</p>
+                <p><strong>Tescil:</strong> Aktif Kayıt</p>
+                <div class="p-2 bg-success text-white rounded text-center fw-bold">Haciz/Rehin Kaydı Yoktur.</div>
+            </div>`);
+    }
+</script>
+
+
